@@ -37,5 +37,40 @@ namespace IntegrityChecker.Data
                 writer.Write(MarshalStructure<T>(structure));
             }
         }
+
+        /// <summary>
+        /// Calculates the checksum of the target file.
+        /// </summary>
+        /// <param name="path">The target file path.</param>
+        /// <returns>The checksum of the target file.</returns>
+        public static int ComputeChecksum(string path)
+        {
+            try
+            {
+                var file = File.Open(path, FileMode.Open, FileAccess.Read);
+                var checksum = 0x25;
+                var num = (file.Length + 4) % 4;
+                var buffer = new byte[(file.Length + 4) - num];
+                var startIndex = 0;
+
+                file.Read(buffer, 0, (int)file.Length);
+
+                while (startIndex < buffer.Length)
+                {
+                    checksum ^= BitConverter.ToInt32(buffer, startIndex);
+                    startIndex += 4;
+                }
+
+                file.Flush();
+                file.Close();
+                file = null;
+
+                return checksum;
+            }
+            catch
+            {
+                return 0x00000000;
+            }
+        }
     }
 }
