@@ -30,12 +30,37 @@ namespace IntegrityChecker.Data
         /// <typeparam name="T">The <see cref="System.Type"/> of the structure.</typeparam>
         /// <param name="writer">The binary writer.</param>
         /// <param name="structure">The structure.</param>
-        public static void MarshalAndWriteStructure<T>(this BinaryWriter writer, object structure)
+        public static void WriteStructure<T>(this BinaryWriter writer, object structure)
         {
             if (writer != null && writer.BaseStream.CanWrite)
             {
                 writer.Write(MarshalStructure<T>(structure));
             }
+        }
+
+        /// <summary>
+        /// Writes a value to the current stream.
+        /// </summary>
+        /// <typeparam name="T">The <see cref="System.Type"/> of the structure.</typeparam>
+        /// <param name="writer">The binary writer.</param>
+        /// <param name="structure">The structure.</param>
+        public static T ReadStructure<T>(this BinaryReader reader) where T : new()
+        {
+            if (reader != null && reader.BaseStream.CanRead)
+            {
+                var structSize = Marshal.SizeOf(typeof(T));
+                var buffer = new byte[structSize];
+                var handle = GCHandle.Alloc(buffer, GCHandleType.Pinned);
+
+                reader.Read(buffer, 0, buffer.Length);
+
+                var structure = (T)Marshal.PtrToStructure(handle.AddrOfPinnedObject(), typeof(T));
+                handle.Free();
+
+                return structure;
+            }
+
+            return default(T);
         }
 
         /// <summary>

@@ -57,7 +57,7 @@ namespace IntegrityChecker.Data
 
             using (var writer = new BinaryWriter(File.Open(FileIntegrity.FileName, FileMode.Create, FileAccess.Write)))
             {
-                writer.MarshalAndWriteStructure<FileIntegrityHeader>(header);
+                writer.WriteStructure<FileIntegrityHeader>(header);
 
                 foreach (var entry in Entries)
                 {
@@ -88,6 +88,61 @@ namespace IntegrityChecker.Data
                 };
 
                 Entries.Add(entry);
+            }
+        }
+
+        public void Read(string path)
+        {
+            if (!File.Exists(path))
+            {
+                System.Windows.Forms.MessageBox.Show("File not found - " + path, "Error", System.Windows.Forms.MessageBoxButtons.OK, System.Windows.Forms.MessageBoxIcon.Error);
+                return;
+            }
+
+            var header = new FileIntegrityHeader();
+            var list = new List<FileIntegrityEntry>();
+
+            using (var reader = new BinaryReader(File.Open(FileIntegrity.FileName, FileMode.Open, FileAccess.Read)))
+            {
+                header = reader.ReadStructure<FileIntegrityHeader>();
+
+                for (int i = 0; i < header.EntryCount; i++)
+                {
+                    var entry = new FileIntegrityEntry();
+                    entry.FileNameLen = reader.ReadInt16();
+                    entry.FileName = new string(reader.ReadChars(entry.FileNameLen));
+                    entry.LastModifiedTime = reader.ReadInt64();
+                    entry.Size = reader.ReadInt32();
+                    entry.Checksum = reader.ReadInt32();
+
+                    list.Add(entry);
+                }
+            }
+
+            Scan(Environment.CurrentDirectory);
+
+            foreach (var entry in Entries)
+            {
+                if (list.Contains(entry, new FileIntegrityEntryComparer()))
+                {
+                    var lentry = list.Find(e => e.FileName == entry.FileName);
+                    if (lentry.LastModifiedTime != entry.LastModifiedTime)
+                    {
+                        System.Windows.Forms.MessageBox.Show("File time missmatch - " + entry.FileName);
+                    }
+                    if (lentry.Size != entry.Size)
+                    {
+                        System.Windows.Forms.MessageBox.Show("File size missmatch - " + entry.FileName);
+                    }
+                    if (lentry.Checksum != entry.Checksum)
+                    {
+                        System.Windows.Forms.MessageBox.Show("File checksum missmatch - " + entry.FileName);
+                    }
+                }
+                else
+                {
+                    System.Windows.Forms.MessageBox.Show("File not found - " + entry.FileName);
+                }
             }
         }
     }

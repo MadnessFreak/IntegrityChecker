@@ -45,6 +45,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="CommandLineManager.cs" />
     <Compile Include="Data\FileIntegrity.cs" />
     <Compile Include="Data\FileIntegrityEntry.cs" />
     <Compile Include="Data\FileIntegrityHeader.cs" />
